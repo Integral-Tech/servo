@@ -5,7 +5,7 @@
 use core::panic;
 use std::collections::HashMap;
 use std::fs::{self, File, read_to_string};
-use std::io::Read;
+use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 #[cfg(any(target_os = "android", target_env = "ohos"))]
@@ -192,8 +192,8 @@ fn get_preferences(prefs_files: &[PathBuf], config_dir: &Option<PathBuf>) -> Pre
     preferences
 }
 
-fn read_prefs_file<P: AsRef<Path>>(path: P) -> HashMap<String, PrefValue> {
-    read_prefs_map(&read_to_string(path).expect("Error opening user prefs"))
+fn read_prefs_file<P: AsRef<Path>>(path: P) -> Result<HashMap<String, PrefValue>, io::Error> {
+    read_prefs_map(&read_to_string(path)?)
 }
 
 pub fn read_prefs_map(txt: &str) -> HashMap<String, PrefValue> {
@@ -267,18 +267,15 @@ fn parse_resolution_string(
 }
 
 /// Parse stylesheets into the byte stream.
-fn parse_user_stylesheets(string: String) -> Result<Vec<(Vec<u8>, ServoUrl)>, std::io::Error> {
+fn parse_user_stylesheets(string: String) -> Result<Vec<(Vec<u8>, ServoUrl)>, io::Error> {
     Ok(string
         .split_whitespace()
         .map(|filename| {
-            let cwd = env::current_dir().unwrap();
+            let cwd = env::current_dir()?;
             let path = cwd.join(filename);
-            let url = ServoUrl::from_url(Url::from_file_path(&path).unwrap());
+            let url = ServoUrl::from_url(Url::from_file_path(&path)?);
             let mut contents = Vec::new();
-            File::open(path)
-                .unwrap()
-                .read_to_end(&mut contents)
-                .unwrap();
+            File::open(path)?.read_to_end(&mut contents)?;
             (contents, url)
         })
         .collect())
