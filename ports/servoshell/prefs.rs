@@ -399,7 +399,7 @@ struct CmdArgs {
     debug: Vec<String>,
 
     /// Device pixels per px.
-    #[bpaf(argument("1.0"))]
+    #[bpaf(argument("1.0")), guard(|ratio| 0.0 < ratio && ratio < 100.0, "ratio must be between 0.0 and 100.0")]
     device_pixel_ratio: Option<f32>,
 
     /// Start remote devtools server on port.
